@@ -1,0 +1,300 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(coronavirus)
+library(kableExtra)
+library(knitr)
+library(scales)
+library(RColorBrewer)
+```
+
+```{r splitting_data,include=FALSE}
+morocco_data <- coronavirus %>% filter(country == "Morocco")
+morocco_data_confirmed <- morocco_data %>% filter(type=="confirmed")
+morocco_data_death <- morocco_data %>% filter(type=="death")
+morocco_data_recovered <- morocco_data %>% filter(type=="recovery")
+
+morocco_continent <- morocco_data %>% distinct(continent_code) %>% pull(continent_code)
+morocco_same_continent_data <- coronavirus %>% filter(continent_code == morocco_continent)
+confirmed_cases_data <- morocco_same_continent_data %>% filter(type == "confirmed")
+```
+<div align="center" style="line-height: 1.5;">
+# Exploratory Data Analysis on COVID-19 Data of Morocco
+## Mid Semester Examination Assignment
+### AS2021574
+</div>
+# **About Morocco** 
+<div align="justify" style="line-height: 1.5;">
+Morocco, a North African country bordering the Atlantic Ocean and Mediterranean Sea, is distinguished by its Berber, Arabian and European cultural influences. Marrakesh’s medina, a mazelike medieval quarter, offers entertainment in its Djemaa el-Fna square and souks (marketplaces) selling ceramics, jewelry and metal lanterns. The capital Rabat’s Kasbah of the Udayas is a 12th-century royal fort overlooking the water.
+</div>
+
+- **Location & Geography**
+  
+  Morocco is located in the Maghreb region of North Africa. It borders the Mediterranean Sea to the north, the Atlantic Ocean to the west, Algeria to the east, and the disputed territory of Western Sahara to the south. Morocco also claims Spanish exclaves Ceuta, Melilla, and several small islands off its coast. The capital is Rabat, and the largest city is Casablanca.
+
+- **Population & Language**
+  
+  Morocco has a population of roughly 37 million. The official and predominant religion is Islam. The official languages are Arabic and Berber, while French and the Moroccan dialect of Arabic are also widely spoken.
+
+- **Cultural Identity**
+  
+  Moroccan identity and culture are a blend of Arab, Berber, African, and European influences.
+
+- **Political Structure**
+  
+  Morocco is a unitary semi-constitutional monarchy with an elected parliament. The King of Morocco holds significant executive and legislative powers, especially over the military, foreign policy, and religious affairs. The executive branch is led by the King and the Prime Minister. Legislative power is vested in the House of Representatives and the House of Councillors. Judicial power rests with the Constitutional Court, which reviews the validity of laws, elections, and referendums.
+
+- **Economic & Political Influence**
+  
+  Morocco has the fifth-largest economy in Africa and wields significant influence in both Africa and the Arab world. It is considered a middle power in global affairs and holds membership in the Arab League, the Arab Maghreb Union, the Union for the Mediterranean, and the African Union.
+
+<center>
+```{r map,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE , results=FALSE}
+morocco_latitude <- morocco_data %>% distinct(lat) %>% pull(lat)
+morocco_longitude <- morocco_data %>% distinct(long) %>% pull(long)
+
+world = map_data("world")
+ggplot() +
+  geom_map(
+    data = world, map = world,
+    aes(long, lat, map_id = region),
+    fill = "white", colour = "#7f7f7f", size=0.5) +
+  geom_point(aes(x = morocco_longitude, y = morocco_latitude),
+             color = "red",
+             size = 1)
+```
+</center>
+
+# **Exploratory Data Analysis** 
+
+## 1. Dataset `(coronavirus)`
+<div align="justify" style="line-height: 1.5;">
+The dataset that has been used, contains the daily summary of Coronavirus cases (confirmed, death, and recovered), by state/province. The source for data is Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE) Coronavirus
+</div>
+
+## 2. Summary Statistics `
+
+
+
+```{r calculating_summary_stats,include=FALSE}
+summary_stats <- morocco_data %>%
+  group_by(type) %>%
+  summarise(
+    total_cases = sum(cases),
+    mean_cases = mean(cases),
+    median_cases = median(cases),
+    sd_cases = sd(cases),
+    max_cases = max(cases),
+    min_cases = min(cases)
+  )
+
+confirmed_cases_summary <- summary_stats %>% filter(type == "confirmed")
+confirmed_cases_summary_table <- data.frame(
+  Statistic = c("Total Confirmed Cases", "Mean Confirmed Cases", "Median Confirmed Cases", 
+                "Standard Deviation of Confirmed Cases", "Maximum Confirmed Cases", "Minimum Confirmed Cases"),
+  Value = c(
+    confirmed_cases_summary$total_cases,
+    confirmed_cases_summary$mean_cases,
+    confirmed_cases_summary$median_cases,
+    confirmed_cases_summary$sd_cases,
+    confirmed_cases_summary$max_cases,
+    confirmed_cases_summary$min_cases
+  )
+)
+
+death_cases_summary <- summary_stats %>% filter(type == "death")
+death_cases_summary_table <- data.frame(
+  Statistic = c("Total Death Cases", "Mean Death Cases", "Median Death Cases", 
+                "Standard Deviation of Death Cases", "Maximum Death Cases", "Minimum Death Cases"),
+  Value = c(
+    death_cases_summary$total_cases,
+    death_cases_summary$mean_cases,
+    death_cases_summary$median_cases,
+    death_cases_summary$sd_cases,
+    death_cases_summary$max_cases,
+    death_cases_summary$min_cases
+  )
+)
+
+recovered_cases_summary <- summary_stats %>% filter(type == "recovery")
+recovered_cases_summary_table <- data.frame(
+  Statistic = c("Total Recovered Cases", "Mean Recovered Cases", "Median Recovered Cases", 
+                "Standard Deviation of Recovered Cases", "Maximum Recovered Cases", "Minimum Recovered Cases"),
+  Value = c(
+    recovered_cases_summary$total_cases,
+    recovered_cases_summary$mean_cases,
+    recovered_cases_summary$median_cases,
+    recovered_cases_summary$sd_cases,
+    recovered_cases_summary$max_cases,
+    recovered_cases_summary$min_cases
+  )
+)
+
+```
+
+### Confirmed Cases
+```{r confirmed_cases_summary_plot,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+kable(confirmed_cases_summary_table, format = "html", caption = "Summary Statistics for Confirmed Cases in Morocco") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+ggplot(morocco_data %>% filter(type == "confirmed"), aes(x = cases)) +
+  geom_histogram(col = "white") +
+  labs(title = "Distribution of COVID-19 Confirmed Cases", x = "Number of Cases", y = "Frequency")
+```
+<div align="justify" style="line-height: 1.5;">
+By analyzing above histogram and the summary statistics, we can observe that COVID-19 "Confirmed" cases shows a positively skiwed distribution, with a mean value of 1113.29. There were total of 1272490 confirmed cases reported according to the data.
+</div>
+
+### Death Cases
+```{r death_cases_summary_plot,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+kable(death_cases_summary_table, format = "html", caption = "Summary Statistics for Death Cases in Morocco") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+ggplot(morocco_data %>% filter(type == "death"), aes(x = cases)) +
+  geom_histogram(col = "white") +
+  labs(title = "Distribution of COVID-19 Death Cases", x = "Number of Cases", y = "Frequency")
+
+```
+
+<div align="justify" style="line-height: 1.5;">
+By analyzing above histogram and the summary statistics, we can observe that COVID-19 "Death" cases shows a positively skiwed distribution, with a mean value of 14.257. There were total of 16296 death cases reported according to the data.
+</div>
+
+### Recovered Cases
+```{r recovered_cases_summary_plot,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+kable(recovered_cases_summary_table, format = "html", caption = "Summary Statistics for Recovered Cases in Morocco") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+ggplot(morocco_data %>% filter(type == "recovery"), aes(x = cases)) +
+  geom_histogram(col = "white") +
+  labs(title = "Distribution of COVID-19 Recovered Cases", x = "Number of Cases", y = "Frequency") 
+
+```
+
+<div align="justify" style="line-height: 1.5;">
+By analyzing above histogram and the summary statistics, we can observe that COVID-19 "Recovered" cases shows a positively skiwed distribution, with a mean value of 509.79.There were total of 582692 recovered cases reported according to the data.
+</div>
+
+## 3. Time Series Analysis
+```{r time_series_plot,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(morocco_data, aes(x = date, y = cases, color = type)) +
+  geom_line() +
+  labs(title = "COVID-19 Cases Over Time in Morocco",
+       x = "Date",
+       y = "Number of Cases") +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~type, scales = "free_y", ncol = 1)
+
+```
+
+<div align="justify" style="line-height: 1.5;">
+Morocco's Confirmed and Death Cases plot shows how the pandemic evolved with 4 significant waves. The confirmed cases' waves are followed by the waves in death cases, although the magnitude of deaths is significantly lower than that of confirmed cases
+
+The plot of Recovered Cases shows that the data of recovered cases were missing since mid-2021. There for it is hard to interpret on the Recovered Cases. 
+</div>
+
+
+## 4. Comparison with Other Countries (South Africa)
+
+### Percerntage of Confirmed cases per Population among countries
+```{r percentage_of_total_cases_per_popolation,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+country_confirmed_cases <- morocco_same_continent_data %>%
+  group_by(country) %>%
+  summarise(
+    total_confirmed_cases = sum(cases),
+    population = max(population)  # Assuming population is the same within a country
+  ) %>%
+  mutate(cases_per_population = (total_confirmed_cases / population)*100) %>%
+  mutate(is_morocco = ifelse(country == "Morocco", "Morocco", "Other"))
+
+
+ggplot(country_confirmed_cases, aes(x = country, y = cases_per_population,fill = is_morocco)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Percentages of Confirmed Cases per Population by Country",
+    x = "Country",
+    y = "Percentage of Confirmed Cases per Population"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position = "none")
+```
+
+<div align="justify" style="line-height: 1.5;">
+By observing the above bar chart of Confirmed Covid-19 Cases as a percentage of the Population of the Country, We can say that Morocco has a very low percentage. 
+</div>
+
+### Distribution of intensity of Confirmed Cases Across South Africa
+```{r heat_map_of_percentages,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE , results=FALSE}
+
+morocco_same_continent_confirmed_map_summary <- confirmed_cases_data %>% 
+  group_by(country) %>%
+  summarise(
+    total_confirmed_cases = sum(cases),
+    lat = first(lat),
+    long = first(long),
+    population = max(population)
+  )%>%
+  mutate(cases_per_population = (total_confirmed_cases / population)*100) %>%
+  mutate(is_morocco = ifelse(country == "Morocco", "Morocco", "Other"))
+
+world <- map_data("world")
+ggplot() +
+  geom_map(
+    data = world, map = world,
+    aes(long, lat, map_id = region),
+    fill = "white", colour = "#7f7f7f", size = 0.5
+  ) +
+  geom_point(data = morocco_same_continent_confirmed_map_summary, 
+             aes(x = long, y = lat, size = cases_per_population, color = is_morocco)) +
+  scale_color_manual(values = c("Morocco" = "red", "Other" = "blue")) +
+  theme(legend.position = "none") +
+  xlim(-20, 60) + 
+  ylim(-35, 40)  
+
+```
+
+<div align="justify" style="line-height: 1.5;">
+Above heat map of percentage of Confirmed Cases across Africa also confirms the above bar chart
+</div>
+
+## 5. Correlation Analysis
+```{r correlation_plot, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+ggplot(country_confirmed_cases, aes(x = population, y = total_confirmed_cases)) +
+  geom_point(color = "blue", size = 2) +
+  labs(
+    title = "Total Confirmed Cases vs Population by Country (k=1000)",
+    x = "Population",
+    y = "Total Confirmed Cases"
+  )+
+  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = "k")) +
+  scale_x_continuous(labels = label_number(scale = 1e-3, suffix = "k"))
+
+```
+
+<div align="justify" style="line-height: 1.5;">
+By observing the scatter plot between Total Confirmed Cases of each country in the Continent of Africa and the Population , we can't see any relationship  
+</div>
+
+# **Conclusion and Discussion ** 
+
+## Conclusion
+<div align="justify" style="line-height: 1.5;">
+Based on the exploratory data analysis of COVID-19 data for Morocco, several important insights have been gained. The summary statistics and histograms indicate that the distributions of confirmed, death, and recovered cases are positively skewed, with mean values of 1113.29, 14.257, and 509.79 respectively. The time series analysis revealed four significant waves of confirmed cases, each followed by corresponding waves in death cases, although the magnitude of deaths remained significantly lower. The absence of recovered case data since mid-2021 poses a challenge in interpreting recovery trends. Additionally, Morocco's percentage of confirmed cases relative to its population is notably low compared to other African countries, this can be observed by both the bar chart and the heat map. Correlation analysis between total confirmed cases and population across African countries showed no relationship. These findings provide  an overview of the COVID-19 situation in Morocco.This highlights the progression of the pandemic and the relatively low impact in terms of population percentage.
+</div>
+## Discussion
+
+Although Morocco Data didn't show any negative values, when using other African continent values, it was observed that there are negative values in the cases column. There for, the absolute value of the such cases are used for calculations and plotting
+
+# **Reference** 
+
+- https://en.wikipedia.org/wiki/Morocco
+- https://thiyangt.github.io/geom.encyclopedia/
+- https://github.com/RamiKrispin/coronavirus
+- https://bookdown.org/yihui/rmarkdown-cookbook/kable.html
