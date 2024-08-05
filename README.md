@@ -8,7 +8,6 @@ The goal of this project is to analyze and visualize COVID-19 data for Morocco t
 
 ## Files
 
-- `data/`: Contains the dataset used for analysis.
 - `docs/`: Contains the HTML report generated from the R Markdown file.
 - `scripts/`: Contains the R Markdown file used for the analysis.
 
